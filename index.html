@@ -1,0 +1,842 @@
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ateliê de Marca</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&family=Sacramento&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Dependência para exportar PNG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    /* =========================================================
+       1. Design tokens e base
+       ========================================================= */
+    :root {
+      --page: #f9f6f0;
+      --cream: #fdfbf7;
+      --brown: #4a3728;
+      --soft: #7c6553;
+      --rose: #b76e79;
+      --rose-soft: #e9cdcb;
+      --line: #4a37281f;
+      --shadow: 0 12px 34px #4a372817;
+      --ring: 0 0 0 3px #b76e7924;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font: 14px/1.5 Montserrat, system-ui, sans-serif;
+      color: var(--brown);
+      background:
+        radial-gradient(circle at 12% 0%, #b76e7917, transparent 45%),
+        radial-gradient(circle at 92% 8%, #f1e9dde6, transparent 40%),
+        var(--page);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input {
+      font: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    svg {
+      display: block;
+    }
+
+    /* =========================================================
+       2. Estrutura principal do layout
+       ========================================================= */
+    .header {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 26px clamp(16px, 4vw, 42px) 4px;
+    }
+
+    .header h1 {
+      font: 600 clamp(26px, 3.4vw, 36px)/1.1 'Cormorant Garamond', serif;
+    }
+
+    .header em {
+      color: var(--rose);
+    }
+
+    .header p,
+    .group-title,
+    .preview-head span {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--soft);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(220px, 270px);
+      grid-template-areas: 'left preview right';
+      gap: clamp(14px, 1.8vw, 24px);
+      padding: 14px clamp(16px, 3vw, 36px) 46px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls,
+    .preview {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      padding: clamp(14px, 1.5vw, 22px);
+    }
+
+    .controls-left { grid-area: left; }
+    .controls-right { grid-area: right; }
+    .preview { grid-area: preview; min-width: 0; }
+
+    .group-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--rose);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .group-title::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, var(--rose-soft), transparent);
+    }
+
+    /* =========================================================
+       3. Controles: cores, fontes, borda e inputs
+       ========================================================= */
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 7px 0;
+    }
+
+    .color-row + .color-row {
+      border-top: 1px dashed var(--line);
+    }
+
+    .color-name {
+      flex: 1;
+      font-size: 13px;
+    }
+
+    .swatch {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #4a372830;
+      flex-shrink: 0;
+    }
+
+    .swatch input {
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      background: none;
+      cursor: pointer;
+    }
+
+    .hex {
+      width: 68px;
+      text-align: right;
+      font: 10px 'Space Mono', monospace;
+      color: var(--soft);
+    }
+
+    .segmented {
+      display: grid;
+      gap: 8px;
+    }
+
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .seg-btn,
+    .symbol-btn,
+    .font-btn {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--soft);
+      border-radius: 13px;
+      transition: 0.18s ease;
+    }
+
+    .seg-btn {
+      min-height: 50px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 6px;
+      font-size: 11px;
+    }
+
+    .seg-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .seg-btn.active,
+    .symbol-btn.active,
+    .font-btn.active {
+      border-color: var(--rose);
+      background: #fdf6f4;
+      color: var(--brown);
+      box-shadow: var(--ring);
+    }
+
+    .border-preview {
+      width: 28px;
+      height: 16px;
+      border: 2px solid currentColor;
+      border-radius: 3px;
+    }
+
+    .border-preview.thick {
+      border-width: 6px;
+    }
+
+    .symbol-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .symbol-btn {
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+    }
+
+    .symbol-btn svg {
+      width: 23px;
+      height: 23px;
+    }
+
+    .font-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .font-btn {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 14px;
+      text-align: left;
+    }
+
+    .font-sample {
+      width: 42px;
+      flex-shrink: 0;
+      text-align: center;
+      font-size: 24px;
+      line-height: 1;
+      color: var(--brown);
+    }
+
+    .font-name {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .field + .field {
+      margin-top: 10px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--soft);
+    }
+
+    .field input {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: var(--rose);
+      box-shadow: var(--ring);
+    }
+
+    /* =========================================================
+       4. Preview e logo
+       ========================================================= */
+    .preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .preview-head h2 {
+      font: 600 22px 'Cormorant Garamond', serif;
+    }
+
+    .preview-head span {
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+    }
+
+    .stage {
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(16px, 3vw, 40px);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 50% 0%, white, transparent 62%),
+        repeating-linear-gradient(45deg, #f4ede3 0 9px, #f8f2ea 9px 18px);
+    }
+
+    .logo-frame {
+      position: relative;
+      width: min(100%, 470px);
+      aspect-ratio: 1 / 1;
+      height: auto;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--logo-bg, #fdfbf7);
+      border: 2px solid var(--logo-border, var(--rose));
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .logo-frame.border-thick {
+      border-width: 10px;
+    }
+
+    .logo-frame.border-thick::after {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border: 1px solid var(--logo-border, var(--rose));
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .logo-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      max-width: 100%;
+    }
+
+    .layout-top { flex-direction: column; }
+    .layout-bottom { flex-direction: column-reverse; }
+    .layout-left { flex-direction: row; }
+    .layout-right { flex-direction: row-reverse; }
+
+    .logo-symbol {
+      width: 66px;
+      height: 66px;
+      flex-shrink: 0;
+    }
+
+    .layout-top .logo-symbol,
+    .layout-bottom .logo-symbol {
+      width: 72px;
+      height: 72px;
+    }
+
+    .logo-symbol svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .logo-text {
+      max-width: 100%;
+      text-align: center;
+    }
+
+    .layout-left .logo-text,
+    .layout-right .logo-text {
+      text-align: left;
+    }
+
+    .logo-name {
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .f-cormorant { font: 600 34px 'Cormorant Garamond', serif; }
+    .f-playfair { font: 600 29px 'Playfair Display', serif; }
+    .f-montserrat { font: 400 22px Montserrat, sans-serif; letter-spacing: 0.14em; }
+    .f-sacramento { font: 44px/1.1 Sacramento, cursive; }
+    .f-spacemono { font: 400 21px 'Space Mono', monospace; }
+
+    .logo-tagline {
+      margin-top: 9px;
+      font: 500 8px Montserrat, sans-serif;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      opacity: 0.72;
+      overflow-wrap: anywhere;
+    }
+
+    .download {
+      width: 100%;
+      min-height: 56px;
+      border: 0;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #c07c86, #b76e79 45%, #9c5c66);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      box-shadow: 0 12px 26px #b76e7952;
+    }
+
+    .download:disabled {
+      opacity: 0.65;
+      cursor: progress;
+    }
+
+    /* =========================================================
+       5. Responsividade
+       ========================================================= */
+    @media (min-width: 1101px) {
+      .preview {
+        position: sticky;
+        top: 18px;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .app {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+          'left right'
+          'preview preview';
+      }
+
+      .preview {
+        position: static;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          'left'
+          'preview'
+          'right';
+      }
+
+      .logo-frame {
+        padding: 20px;
+      }
+
+      .f-cormorant { font-size: 28px; }
+      .f-playfair { font-size: 24px; }
+      .f-montserrat { font-size: 18px; }
+      .f-sacramento { font-size: 36px; }
+      .f-spacemono { font-size: 17px; }
+
+      .logo-symbol {
+        width: 52px;
+        height: 52px;
+      }
+
+      .logo-content {
+        gap: 14px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Cabeçalho da página -->
+  <header class="header">
+    <h1>Ateliê <em>de</em> Marca</h1>
+    <p>Gerador de identidade visual</p>
+  </header>
+
+  <!-- Layout principal -->
+  <main class="app">
+    <!-- Painel esquerdo: cores e tipografia -->
+    <section class="panel controls controls-left" aria-label="Personalização de cores, tipografia e texto">
+      <div class="group">
+        <h2 class="group-title">Paleta de cores</h2>
+
+        <div class="color-row">
+          <span class="color-name">Fundo</span>
+          <div class="swatch"><input type="color" data-key="bg" value="#FDFBF7" aria-label="Cor do fundo"></div>
+          <span class="hex" id="hex-bg">#FDFBF7</span>
+        </div>
+
+        <div class="color-row">
+          <span class="color-name">Símbolo</span>
+          <div class="swatch"><input type="color" data-key="symbolColor" value="#4A3728" aria-label="Cor do símbolo"></div>
+          <span class="hex" id="hex-symbolColor">#4A3728</span>
+        </div>
+
+        <div class="color-row">
+          <span class="color-name">Borda</span>
+          <div class="swatch"><input type="color" data-key="borderColor" value="#B76E79" aria-label="Cor da borda"></div>
+          <span class="hex" id="hex-borderColor">#B76E79</span>
+        </div>
+
+        <div class="color-row">
+          <span class="color-name">Fonte</span>
+          <div class="swatch"><input type="color" data-key="textColor" value="#4A3728" aria-label="Cor do texto"></div>
+          <span class="hex" id="hex-textColor">#4A3728</span>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2 class="group-title">Tipografia</h2>
+
+        <div class="font-list" role="group" aria-label="Escolha da fonte">
+          <button type="button" class="font-btn active" data-group="font" data-value="f-cormorant">
+            <span class="font-sample" style="font-family: 'Cormorant Garamond'">Aa</span>
+            <span class="font-name">Cormorant · Acadêmica</span>
+          </button>
+
+          <button type="button" class="font-btn" data-group="font" data-value="f-playfair">
+            <span class="font-sample" style="font-family: 'Playfair Display'">Aa</span>
+            <span class="font-name">Playfair · Elegante</span>
+          </button>
+
+          <button type="button" class="font-btn" data-group="font" data-value="f-montserrat">
+            <span class="font-sample" style="font-family: Montserrat">Aa</span>
+            <span class="font-name">Montserrat · Moderna</span>
+          </button>
+
+          <button type="button" class="font-btn" data-group="font" data-value="f-sacramento">
+            <span class="font-sample" style="font-family: Sacramento">Aa</span>
+            <span class="font-name">Sacramento · Manuscrita</span>
+          </button>
+
+          <button type="button" class="font-btn" data-group="font" data-value="f-spacemono">
+            <span class="font-sample" style="font-family: 'Space Mono'">Aa</span>
+            <span class="font-name">Space Mono · Técnica</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preview principal da marca -->
+    <section class="panel preview" aria-label="Pré-visualização da marca">
+      <div class="preview-head">
+        <h2>Pré-visualização</h2>
+        <span>Tempo real</span>
+      </div>
+
+      <div class="stage">
+        <div class="logo-frame border-thin" id="logoFrame">
+          <div class="logo-content layout-top" id="logoContent">
+            <div class="logo-symbol" id="logoSymbol"></div>
+            <div class="logo-text">
+              <div class="logo-name f-cormorant" id="logoName">Ateliê Aurora</div>
+              <div class="logo-tagline" id="logoTagline">design &amp; pesquisa</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="download" id="btnDownload">↓ &nbsp; Baixar em PNG</button>
+    </section>
+
+    <!-- Painel direito: borda, símbolo e texto -->
+    <section class="panel controls controls-right" aria-label="Personalização de borda, símbolo e disposição">
+      <div class="group">
+        <h2 class="group-title">Estilo da borda</h2>
+
+        <div class="segmented cols-2" role="group" aria-label="Estilo da borda">
+          <button type="button" class="seg-btn active" data-group="borderStyle" data-value="thin">
+            <span class="border-preview"></span>
+            Borda fina
+          </button>
+
+          <button type="button" class="seg-btn" data-group="borderStyle" data-value="thick">
+            <span class="border-preview thick"></span>
+            Borda trabalhada
+          </button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2 class="group-title">Símbolo</h2>
+        <div class="symbol-grid" id="symbolGrid" role="group" aria-label="Escolha do símbolo"></div>
+      </div>
+
+      <div class="group">
+        <h2 class="group-title">Disposição</h2>
+
+        <div class="segmented cols-4" role="group" aria-label="Disposição do símbolo">
+          <button type="button" class="seg-btn active" data-group="layout" data-value="top" aria-pressed="true">
+            ▣
+            <span>Acima</span>
+          </button>
+
+          <button type="button" class="seg-btn" data-group="layout" data-value="bottom" aria-pressed="false">
+            ▤
+            <span>Abaixo</span>
+          </button>
+
+          <button type="button" class="seg-btn" data-group="layout" data-value="left" aria-pressed="false">
+            ◧
+            <span>Esquerda</span>
+          </button>
+
+          <button type="button" class="seg-btn" data-group="layout" data-value="right" aria-pressed="false">
+            ◨
+            <span>Direita</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2 class="group-title">Texto da marca</h2>
+
+        <div class="field">
+          <label for="inputName">Nome da marca</label>
+          <input id="inputName" type="text" maxlength="28" value="Ateliê Aurora" placeholder="Ex.: Ateliê Aurora" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label for="inputTagline">Slogan (opcional)</label>
+          <input id="inputTagline" type="text" maxlength="34" value="design & pesquisa" placeholder="Ex.: design & pesquisa" autocomplete="off">
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // =========================================================
+    // 1. Definição dos ícones que podem ser usados na marca
+    // =========================================================
+    const SYMBOLS = {
+      leaf: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',
+      crown: '<path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3l4.27-3.66a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.72H5.81a1 1 0 0 1-.96-.72L2.02 6.03a.5.5 0 0 1 .8-.52l4.27 3.66a1 1 0 0 0 1.52-.3z"/><path d="M5 21h14"/>',
+      gem: '<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/>',
+      moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+      star: '<path d="M11.53 2.3a.53.53 0 0 1 .94 0l2.31 4.68a2.12 2.12 0 0 0 1.6 1.16l5.16.75a.53.53 0 0 1 .3.9l-3.74 3.64a2.12 2.12 0 0 0-.61 1.88l.88 5.14a.53.53 0 0 1-.77.56l-4.62-2.43a2.12 2.12 0 0 0-1.97 0L6.4 21.01a.53.53 0 0 1-.77-.56l.88-5.14a2.12 2.12 0 0 0-.61-1.88L2.16 9.8a.53.53 0 0 1 .3-.9l5.16-.76a2.12 2.12 0 0 0 1.6-1.16z"/>',
+      feather: '<path d="M12.67 19a2 2 0 0 0 1.42-.59l6.15-6.17a6 6 0 0 0-8.49-8.49L5.59 9.91A2 2 0 0 0 5 11.33V18a1 1 0 0 0 1 1z"/><path d="M16 8 2 22"/><path d="M17.5 15H9"/>',
+      mountain: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',
+      waves: '<path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 12c.6.5 1.2 1 2.5 1C7 13 7 11 9.5 11c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 18c.6.5 1.2 1 2.5 1C7 19 7 17 9.5 17c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>',
+      heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+      flower: '<circle cx="12" cy="12" r="3"/><path d="M12 16.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 1 1 4.5 4.5 4.5 4.5 0 1 1-4.5 4.5"/><path d="M12 7.5V9M7.5 12H9M16.5 12H15M12 16.5V15"/>'
+    };
+
+    // =========================================================
+    // 2. Estado da aplicação (paleta, fonte, layout e texto)
+    // =========================================================
+    const state = {
+      bg: '#FDFBF7',
+      symbolColor: '#4A3728',
+      borderColor: '#B76E79',
+      textColor: '#4A3728',
+      borderStyle: 'thin',
+      symbol: 'leaf',
+      font: 'f-cormorant',
+      layout: 'top',
+      name: 'Ateliê Aurora',
+      tagline: 'design & pesquisa'
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const frame = $('logoFrame');
+    const content = $('logoContent');
+    const symbolBox = $('logoSymbol');
+    const nameEl = $('logoName');
+    const taglineEl = $('logoTagline');
+    const symbolGrid = $('symbolGrid');
+
+    // =========================================================
+    // 3. Helpers de renderização
+    // =========================================================
+    function svgMarkup(key, color, width = 1.5) {
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SYMBOLS[key]}</svg>`;
+    }
+
+    function render() {
+      frame.style.setProperty('--logo-bg', state.bg);
+      frame.style.setProperty('--logo-border', state.borderColor);
+      frame.classList.toggle('border-thick', state.borderStyle === 'thick');
+      frame.classList.toggle('border-thin', state.borderStyle === 'thin');
+
+      symbolBox.innerHTML = svgMarkup(state.symbol, state.symbolColor);
+      content.className = `logo-content layout-${state.layout}`;
+
+      nameEl.className = `logo-name ${state.font}`;
+      nameEl.style.color = state.textColor;
+      nameEl.textContent = state.name.trim() || 'Sua Marca';
+
+      taglineEl.style.color = state.textColor;
+      taglineEl.textContent = state.tagline;
+      taglineEl.style.display = state.tagline.trim() ? 'block' : 'none';
+    }
+
+    // =========================================================
+    // 4. Montagem da grade de símbolos
+    // =========================================================
+    Object.keys(SYMBOLS).forEach((key) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `symbol-btn${key === state.symbol ? ' active' : ''}`;
+      button.title = key;
+      button.setAttribute('aria-label', `Símbolo ${key}`);
+      button.innerHTML = svgMarkup(key, 'currentColor');
+
+      button.addEventListener('click', () => {
+        state.symbol = key;
+        symbolGrid.querySelectorAll('button').forEach((item) => {
+          item.classList.toggle('active', item === button);
+        });
+        render();
+      });
+
+      symbolGrid.appendChild(button);
+    });
+
+    // =========================================================
+    // 5. Eventos dos controles
+    // =========================================================
+    document.querySelectorAll('input[type="color"]').forEach((input) => {
+      input.addEventListener('input', (event) => {
+        const key = event.target.dataset.key;
+        state[key] = event.target.value;
+        $(`hex-${key}`).textContent = event.target.value.toUpperCase();
+        render();
+      });
+    });
+
+    document.querySelectorAll('[data-group]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const group = button.dataset.group;
+        state[group] = button.dataset.value;
+
+        document.querySelectorAll(`[data-group="${group}"]`).forEach((item) => {
+          const isActive = item === button;
+          item.classList.toggle('active', isActive);
+          item.setAttribute('aria-pressed', String(isActive));
+        });
+
+        render();
+      });
+    });
+
+    $('inputName').addEventListener('input', (event) => {
+      state.name = event.target.value;
+      render();
+    });
+
+    $('inputTagline').addEventListener('input', (event) => {
+      state.tagline = event.target.value;
+      render();
+    });
+
+    // =========================================================
+    // 6. Exportação da marca em PNG
+    // =========================================================
+    $('btnDownload').addEventListener('click', async () => {
+      const button = $('btnDownload');
+      const originalText = button.textContent;
+
+      button.disabled = true;
+      button.textContent = 'Gerando imagem…';
+
+      try {
+        if (typeof window.html2canvas !== 'function') {
+          throw new Error('A biblioteca html2canvas não foi carregada.');
+        }
+
+        if (document.fonts?.ready) {
+          await document.fonts.ready;
+        }
+
+        const canvas = await html2canvas(frame, {
+          scale: Math.min(4, Math.max(3, 2200 / frame.offsetWidth)),
+          backgroundColor: null,
+          useCORS: true,
+          logging: false,
+          width: frame.offsetWidth,
+          height: frame.offsetHeight
+        });
+
+        const safe = (state.name.trim() || 'identidade-visual')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+
+        const link = document.createElement('a');
+        link.download = `logo-${safe || 'marca'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (error) {
+        console.error(error);
+        alert('Não foi possível gerar a imagem. Verifique sua conexão e tente novamente.');
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
